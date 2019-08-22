@@ -1,8 +1,12 @@
 import { IConfig } from 'umi-types';
+import path from 'path'
 
 // ref: https://umijs.org/config/
 const config: IConfig = {
   treeShaking: true,
+  alias: {
+    "@/": path.resolve(__dirname, 'src/')
+  },
   plugins: [
     // ref: https://umijs.org/plugin/umi-plugin-react.html
     ['umi-plugin-react', {
