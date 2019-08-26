@@ -5,7 +5,7 @@ import { Form, Icon, Input, Button } from 'antd'
 import request from '@/utils/request'
 import router from 'umi/router'
 import { setCache } from '@/utils/cache';
-
+import api from '@/constants/api'
 
 interface Props {
   form: {
@@ -34,7 +34,7 @@ class LoginComponent extends React.Component<Props, any> {
   }
 
   signAndLogin = async (arg: object) => {
-    let res = await request({ method: 'put', url: '/login', data: arg })
+    let res = await request({ method: 'put', url: api.LOGIN, data: arg })
     if (res && res['token']) {
       setCache('access-token', res['token'])
       router.push('/')
@@ -42,7 +42,7 @@ class LoginComponent extends React.Component<Props, any> {
   }
 
   login = async (arg: object) => {
-    let res = await request({ method: 'post', url: '/login', data: arg })
+    let res = await request({ method: 'post', url: api.LOGIN, data: arg })
     if (res && res['token']) {
       setCache('access-token', res['token'])
       router.push('/')
