@@ -12,3 +12,4 @@ rules:
   jsx-no-multiline-js: false
   jsx-no-lambda: false
   jsx-wrap-multiline: false
+  jsx-curly-spacing: true

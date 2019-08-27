@@ -3,6 +3,7 @@
 const api = {
   LOGIN: '/login',
   PROJECT: '/project',
+  API: '/api'
 }
 
 
