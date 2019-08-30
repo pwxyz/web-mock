@@ -2,6 +2,7 @@ import axios from 'axios'
 import { message } from 'antd'
 import { getCache } from '@/utils/cache';
 import qs from 'qs'
+import isArray from 'lodash/isArray'
 
 enum methodArr {
   'get',
@@ -17,15 +18,31 @@ interface Arg {
   headers?: object
 }
 
-const getBaseUrl = () => 'http://172.31.50.85:3357'
+let url = 'http://172.31.50.85:3357'
+// let url = 'http://47.97.194.165:3357'
+
+const getBaseUrl = () => url
+
+const qsArrToString = (obj: { [x: string]: any }) => {
+  let newObj: { [x: string]: any } = {}
+  for (let key in obj) {
+    if (isArray(obj[key])) {
+      newObj[key] = String(obj[key])
+    }
+    else {
+      newObj[key] = obj[key]
+    }
+  }
+  return newObj
+}
 
 
 const getToken = () => getCache('access-token')
 
 const request = async (arg: Arg) => {
   let url = getBaseUrl() + arg.url
-  let needQs = arg.method === 'get' || 'delete'
-  url += needQs && arg.data ? '?' + qs.stringify(arg.data) : ''
+  let needQs = ['get', 'delete'].includes(arg.method)
+  url += needQs && arg.data ? '?' + qs.stringify(qsArrToString(arg.data)) : ''
   let obj: Arg = {
     method: arg.method,
     url,
