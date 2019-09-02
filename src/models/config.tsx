@@ -2,6 +2,7 @@
 import namespace from '@/constants/namespace'
 import api from '@/constants/api';
 import request from '@/utils/request'
+import { getCache } from '@/utils/cache';
 
 export default {
   namespace: namespace.CONFIG,
@@ -12,7 +13,6 @@ export default {
   effects: {
     // @ts-ignore
     *fetch({ payload }, { call, put }) {
-      console.log('model')
       const res = yield call(request, { method: 'post', url: api.LOGIN_VERIFY })
       if (res) {
         yield put({ type: 'loginState', payload: res['isLogin'] })
@@ -23,13 +23,19 @@ export default {
   subscriptions: {
     // @ts-ignore
     setup({ dispatch, history }) {
-      dispatch({ type: 'fetch' })
+      let token = getCache('access-token')
+      console.log(token, localStorage.getItem('access-token'))
+      if (history.location.pathname != '/login' && token) {
+        dispatch({ type: 'fetch' })
+      }
+
     }
   },
 
   reducers: {
     // @ts-ignore
     loginState(state, { payload }) {
+      console.log('xx')
       return { ...state, isLogin: payload }
     }
   }

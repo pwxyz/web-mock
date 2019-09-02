@@ -5,18 +5,20 @@ import React from 'react'
 import styles from './id.less'
 import request from '@/utils/request';
 import api from '@/constants/api';
-import { Tag, Modal, Switch, Input, Button, Popconfirm, message } from 'antd';
+import { Tag, Modal, Switch, Input, Button, Popconfirm, message, Icon } from 'antd';
 import result from 'lodash/result';
 import dayjs from 'dayjs'
 import { connect } from 'dva';
-import JsonView from './../../components/JsonView/index';
+import ApiEditor from '@/components/ApiEditor/index';
+import { string } from 'prop-types';
 
 interface InitState {
   data: [{
     _id: string,
     router: string,
     method: string,
-    updatedAt: number
+    updatedAt: number,
+    remark?: string,
   }] | [],
   projectid: string,
   project: {
@@ -25,6 +27,8 @@ interface InitState {
     allowAdd: boolean
   },
   visible: boolean,
+  isAddApi: boolean,
+  apiModal: boolean,
   selectApi: {
     [x: string]: any
   }
@@ -32,6 +36,7 @@ interface InitState {
 const mapStateToProps = (state: { [x: string]: any }) => {
   return {
     isLogin: state['config']['isLogin'],
+    state
   }
 }
 
@@ -52,7 +57,9 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     },
     visible: false,
     selectApi: {},
-    projectid: ''
+    projectid: '',
+    isAddApi: true,
+    apiModal: false,
   }
   componentDidMount() {
     let id = result(this.props, 'match.params.id', '')
@@ -90,20 +97,63 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   }
 
   delApi = async (id: string) => {
-    await request({ method: 'delete', url: api.API + '/' + id })
-    // console.log(res)
-    // if (res) {
-    message.success('删除成功')
-    let projectid = result(this.props, 'match.params.id', '')
-    this.getApiList(projectid)
-    // }
+    let { err } = await request({ method: 'delete', url: api.API + '/' + id })
+    if (!err) {
+      message.success('删除成功')
+      let projectid = this.state.projectid
+      this.getApiList(projectid)
+    }
+  }
+
+  addApi = async (obj: object) => {
+    let projectid = this.state.projectid
+    let { err } = await request({ method: 'post', url: api.API, data: { ...obj, belongTo: projectid } })
+    if (!err) {
+      message.success('新增成功')
+      this.getApiList(projectid)
+    }
+  }
+
+  editApi = async (obj: object) => {
+    let apiId = this.state.selectApi._id
+    let projectid = this.state.projectid
+    let { err } = await request({ method: 'put', url: api.API + '/' + apiId, data: obj })
+    if (!err) {
+      message.success('修改成功')
+      this.getApiList(projectid)
+    }
+  }
+
+  hideApiModal = () => {
+    this.setState({ apiModal: false, selectApi: {} })
+  }
+
+  showApiMoadl = (id?: string) => {
+    interface ObjProps {
+      apiModal: boolean,
+      isAddApi: boolean,
+      selectApi: {
+        [x: string]: any
+      }
+    }
+    let obj: ObjProps = {
+      apiModal: true,
+      isAddApi: !id,
+      selectApi: this.state.data.find(i => i._id === id) || {}
+    }
+    this.setState(obj)
   }
 
   render() {
-    const { data, project, visible, selectApi, projectid } = this.state
+    const { data, project, visible, selectApi, projectid, isAddApi, apiModal } = this.state
     const { isLogin = false } = this.props
+    console.log(isLogin, this.props.state)
+    const add = () => this.showApiMoadl()
     return (
       <div className={styles.container} >
+        {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} >
+          <Button onClick={add} type='primary' icon='plus' >新增Api</Button>
+        </div>}
         <div  >
           <h2>{project.name}</h2>
           <div><span>对接地址：</span>{project.testUrl}</div>
@@ -112,11 +162,15 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
         </div>
         <div>
           {
-            data && data.length ? data.map(i => <Item key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} />) : '暂时没有APi'
+            data && data.length ? data.map(i => <Item remark={i.remark || ''} updatedAt={i.updatedAt} key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} editApi={this.showApiMoadl} />) : '暂时没有APi'
           }
         </div>
         <Modal visible={visible} onCancel={this.hideModal} maskClosable={false} footer={null} width={1000} >
           <ModalContent {...selectApi} />
+        </Modal>
+        <Modal visible={apiModal} footer={null} width={1000} title={isAddApi ? '新增' : '编辑'} maskClosable={false} onCancel={this.hideApiModal} >
+          // @ts-ignore
+          <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} />
         </Modal>
       </div>
     )
@@ -129,6 +183,8 @@ interface ItemProps {
   method: string,
   updatedAt?: number,
   isLogin: boolean,
+  editApi: (id: string) => void,
+  remark: string,
   selectApi?: {
     [x: string]: string
   }
@@ -155,7 +211,7 @@ const getColor = (key?: string) => {
   }
 }
 
-const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin }: ItemProps) => {
+const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi, updatedAt, remark }: ItemProps) => {
   const color = getColor(method)
   const getClick = () => {
     onClick(id)
@@ -164,17 +220,26 @@ const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin }: ItemP
     delApi(id)
   }
 
-  const isSelected = selectApi && selectApi['_id'] && id === selectApi['_id']
+  const onEditApi = () => {
+    editApi(id)
+  }
 
+  // const isSelected = selectApi && selectApi['_id'] && id === selectApi['_id']
+
+  const isSelected = false
   return (
     <div className={styles.item} style={{ background: `${isSelected ? 'rgba(0,0,0,0.3)' : ''}` }} >
       <div style={{ flex: 1, cursor: 'pointer', marginRight: 15 }} onClick={getClick} >
         <Tag color={color} >{method}</Tag>
         <span style={{ fontSize: 18 }} >{router}</span>
+        <span style={{ float: 'right' }} >
+          <span style={{ marginRight: 20 }} >{remark}</span>
+          <span>{dayjs(updatedAt).format('YYYY-MM-DD HH:mm:ss')}</span>
+        </span>
       </div>
       {
         isLogin && <div>
-          <Button type='primary' style={{ marginRight: 15 }} >编辑</Button>
+          <Button type='primary' style={{ marginRight: 15 }} onClick={onEditApi} >编辑</Button>
           <Popconfirm onConfirm={onDel} title='确定删除该api?' okText='是' cancelText='否' >
             <Button type='danger'  >删除</Button>
           </Popconfirm>
@@ -209,7 +274,7 @@ const ModalContent = ({ router, method, createdAt, updatedAt, req, res, remark }
       {/* <div><span>req：</span><JsonView json={req} /></div>
       <div><span>res：</span><JsonView json={res} /></div> */}
 
-      {/* <div><span>备注：</span>{ remark }</div> */}
+      <div><span>备注：</span>{remark}</div>
       <div><span>注意：</span>一般情况下，get、delete参数位置在URL上，post、put在body上，暂不考虑特殊情况; </div>
     </div>
   )

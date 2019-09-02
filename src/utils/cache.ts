@@ -11,4 +11,6 @@ export const getCache = (key: string) => {
   }
 }
 
+export const removeCache = (key: string) => localStorage.removeItem(key)
+
 export const setCache = (key: string, value: object) => localStorage.setItem(key, JSON.stringify(value))

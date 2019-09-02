@@ -1,8 +1,9 @@
 import axios from 'axios'
 import { message } from 'antd'
-import { getCache } from '@/utils/cache';
+import { getCache, removeCache } from '@/utils/cache';
 import qs from 'qs'
 import isArray from 'lodash/isArray'
+import router from 'umi/router'
 
 enum methodArr {
   'get',
@@ -54,11 +55,16 @@ const request = async (arg: Arg) => {
   let res = await axios.request(obj)
   if (res && res.status === 200) {
     if (res.data['status'] && res.data['status'] === 1) {
-      return res.data['payload']
+      return res.data['payload'] || {}
+    }
+    if (res.data['status'] === -5) {
+      removeCache('access-token')
+      router.push('/login')
     }
     else {
       let err = res && res.data && res.data['message'] || '发生错误'
       message.error(err)
+      return { err: '发生错误' }
     }
   }
   else {

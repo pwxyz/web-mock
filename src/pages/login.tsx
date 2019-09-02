@@ -6,14 +6,27 @@ import request from '@/utils/request'
 import router from 'umi/router'
 import { setCache } from '@/utils/cache';
 import api from '@/constants/api'
-
+import { connect } from 'dva';
 interface Props {
   form: {
     [x: string]: any
+  },
+  dispatch: (any: any) => void
+}
+
+const mapStateToProps = (state: { [x: string]: any }) => {
+  return {
+    isLogin: state['config']['isLogin'],
+    state
   }
 }
 
-
+const mapDispatchToProps = (dispatch: Function) => {
+  return {
+    dispatch
+  }
+}
+@(connect(mapStateToProps, mapDispatchToProps) as any)
 class LoginComponent extends React.Component<Props, any> {
 
   handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -37,6 +50,7 @@ class LoginComponent extends React.Component<Props, any> {
     let res = await request({ method: 'put', url: api.LOGIN, data: arg })
     if (res && res['token']) {
       setCache('access-token', res['token'])
+      this.props.dispatch({ type: 'config/loginState', payload: true })
       router.push('/')
     }
   }
@@ -45,6 +59,7 @@ class LoginComponent extends React.Component<Props, any> {
     let res = await request({ method: 'post', url: api.LOGIN, data: arg })
     if (res && res['token']) {
       setCache('access-token', res['token'])
+      this.props.dispatch({ type: 'config/loginState', payload: true })
       router.push('/')
     }
   }
