@@ -24,7 +24,6 @@ export default {
     // @ts-ignore
     setup({ dispatch, history }) {
       let token = getCache('access-token')
-      console.log(token, localStorage.getItem('access-token'))
       if (history.location.pathname != '/login' && token) {
         dispatch({ type: 'fetch' })
       }
@@ -35,7 +34,6 @@ export default {
   reducers: {
     // @ts-ignore
     loginState(state, { payload }) {
-      console.log('xx')
       return { ...state, isLogin: payload }
     }
   }

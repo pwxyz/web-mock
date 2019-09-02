@@ -42,7 +42,7 @@ class IndexPage extends React.Component<any, any>{
   getProject = async () => {
     let res = await request({ method: 'get', url: api.PROJECT })
     let { data } = res
-    if (data && data.length) {
+    if (data && data.length > -1) {
       this.setState({ data })
     }
   }

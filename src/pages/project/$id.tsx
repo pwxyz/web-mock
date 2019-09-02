@@ -71,7 +71,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   getApiList = async (id: string) => {
 
     let res = await request({ method: 'get', url: api.API, data: { id } })
-    if (res && res.data && res.data.length) {
+    if (res && res.data && res.data.length > -1) {
       this.setState({ data: res.data })
     }
   }
@@ -147,7 +147,6 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   render() {
     const { data, project, visible, selectApi, projectid, isAddApi, apiModal } = this.state
     const { isLogin = false } = this.props
-    console.log(isLogin, this.props.state)
     const add = () => this.showApiMoadl()
     return (
       <div className={styles.container} >
