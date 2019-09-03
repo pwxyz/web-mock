@@ -91,6 +91,7 @@ class ApiEditorContent extends React.Component<any, any>{
   render() {
     const { data = {} } = this.props
     const { getFieldDecorator } = this.props.form
+    console.log(data)
     return (
       <Form  {...formItemLayout} className={Styles.forms}>
         <FormItem required={false} label='router'>
@@ -125,15 +126,15 @@ class ApiEditorContent extends React.Component<any, any>{
             rules: [{ required: true, message: 'req' }, { validator: this.handleVerifyJson }],
             initialValue: result(data, 'req') ? JSON.stringify(result(data, 'req'), null, 2) : '{\n  \n}'
           })(
-            <CodeEditor height={200} width={600} type={'editor'} onChange={this.getReq} />
+            <CodeEditor height={200} width={600} type={'editor'} onChange={this.getReq} key={Number(new Date())} />
           )}
         </FormItem>
         <FormItem required={false} label='res'>
           {getFieldDecorator('res', {
             rules: [{ required: true, message: 'res' }, { validator: this.handleVerifyJson }],
-            initialValue: result(data, 'res') ? JSON.stringify(result(data, 'res'), null, 2) : '{\n  \n}'
+            initialValue: result(data, 'res') ? JSON.stringify(result(data, 'res'), null, 2) : '{\n  "status":1,\n  "message":"错误信息",\n  "payload":{\n  \n  }  \n}'
           })(
-            <CodeEditor height={380} width={600} type={'editor'} onChange={this.getReq} />
+            <CodeEditor height={380} width={600} type={'editor'} onChange={this.getReq} key={Number(new Date())} />
           )}
         </FormItem>
         <FormItem {...tailFormItemLayout} >

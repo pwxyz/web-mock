@@ -1,5 +1,5 @@
 
-
+// @ts-ignore
 
 import React from 'react'
 import styles from './id.less'
@@ -10,7 +10,7 @@ import result from 'lodash/result';
 import dayjs from 'dayjs'
 import { connect } from 'dva';
 import ApiEditor from '@/components/ApiEditor/index';
-import { string } from 'prop-types';
+import { getBaseUrl } from '@/utils/request'
 
 interface InitState {
   data: [{
@@ -156,7 +156,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
         <div  >
           <h2>{project.name}</h2>
           <div><span>对接地址：</span>{project.testUrl}</div>
-          <div><span>mock地址：</span>{`${location.host}/mock/${projectid}`}</div>
+          <div><span>mock地址：</span>{`${getBaseUrl()}/mock/${projectid}`}</div>
           <div><span>允许导入：</span><Switch checked={project.allowAdd} disabled={true} /></div>
         </div>
         <div>
@@ -168,7 +168,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
           <ModalContent {...selectApi} />
         </Modal>
         <Modal visible={apiModal} footer={null} width={1000} title={isAddApi ? '新增' : '编辑'} maskClosable={false} onCancel={this.hideApiModal} >
-          // @ts-ignore
+
           <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} />
         </Modal>
       </div>

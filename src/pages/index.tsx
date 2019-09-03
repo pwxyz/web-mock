@@ -72,7 +72,6 @@ class IndexPage extends React.Component<any, any>{
     console.log(this.props)
     const { isLogin = false } = this.props
     const add = () => this.showProjectModal()
-
     return (
       <div className={styles.container} >
         {
@@ -80,7 +79,7 @@ class IndexPage extends React.Component<any, any>{
         }
         {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} ><Button type='primary' onClick={add} >新增项目</Button></div>}
         <Modal footer={null} visible={modalVisible} maskClosable={false} onCancel={this.hideProjectModal} title={isNew ? '新增' : '编辑'} >
-          // @ts-ignore
+
           <ProjectModalContent onChange={this.addProject} />
         </Modal>
       </div>

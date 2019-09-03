@@ -22,7 +22,7 @@ interface Arg {
 let url = 'http://172.31.50.85:3357'
 // let url = 'http://47.97.194.165:3357'
 
-const getBaseUrl = () => url
+export const getBaseUrl = () => url
 
 const qsArrToString = (obj: { [x: string]: any }) => {
   let newObj: { [x: string]: any } = {}
