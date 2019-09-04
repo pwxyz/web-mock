@@ -274,6 +274,7 @@ const ModalContent = ({ router, method, createdAt, updatedAt, req, res, remark }
     <div className={styles.content} >
       <div><span>Router：</span>{router}</div>
       <div><span>method：</span>{method}</div>
+      <div><span>remark：</span>{remark}</div>
       <div><span>createdAt：</span>{dayjs(createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
       <div><span>updatedAt：</span>{dayjs(updatedAt).format('YYYY-MM-DD HH:mm:ss')}</div>
       <div><span>req：</span><JsonRender obj={req} /></div>
@@ -281,7 +282,7 @@ const ModalContent = ({ router, method, createdAt, updatedAt, req, res, remark }
       {/* <div><span>req：</span><JsonView json={req} /></div>
       <div><span>res：</span><JsonView json={res} /></div> */}
 
-      <div><span>备注：</span>{remark}</div>
+
       <div><span>注意：</span>一般情况下，get、delete参数位置在URL上，post、put在body上，暂不考虑特殊情况; </div>
     </div>
   )
