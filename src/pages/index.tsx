@@ -69,7 +69,7 @@ class IndexPage extends React.Component<any, any>{
 
   render() {
     const { data, isNew, modalVisible } = this.state
-    console.log(this.props)
+    // console.log(this.props)
     const { isLogin = false } = this.props
     const add = () => this.showProjectModal()
     return (

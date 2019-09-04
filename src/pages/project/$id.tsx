@@ -11,6 +11,7 @@ import dayjs from 'dayjs'
 import { connect } from 'dva';
 import ApiEditor from '@/components/ApiEditor/index';
 import { getBaseUrl } from '@/utils/request'
+import getDataKeys from '@/utils/getDataKeys';
 
 interface InitState {
   data: [{
@@ -19,8 +20,10 @@ interface InitState {
     method: string,
     updatedAt: number,
     remark?: string,
+    noused?: boolean,
   }] | [],
   projectid: string,
+  keyList: {}[] | string[] | [],
   project: {
     name: string,
     testUrl: string,
@@ -56,6 +59,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
       allowAdd: false
     },
     visible: false,
+    keyList: [],
     selectApi: {},
     projectid: '',
     isAddApi: true,
@@ -72,7 +76,8 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
 
     let res = await request({ method: 'get', url: api.API, data: { id } })
     if (res && res.data && res.data.length > -1) {
-      this.setState({ data: res.data })
+      let keyList = getDataKeys(res.data) || []
+      this.setState({ data: res.data, keyList })
     }
   }
 
@@ -145,8 +150,9 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   }
 
   render() {
-    const { data, project, visible, selectApi, projectid, isAddApi, apiModal } = this.state
+    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList } = this.state
     const { isLogin = false } = this.props
+    let arr = isLogin ? data : data.filter(i => !i.noused)
     const add = () => this.showApiMoadl()
     return (
       <div className={styles.container} >
@@ -161,15 +167,15 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
         </div>
         <div>
           {
-            data && data.length ? data.map(i => <Item remark={i.remark || ''} updatedAt={i.updatedAt} key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} editApi={this.showApiMoadl} />) : '暂时没有APi'
+            arr && arr.length ? arr.map(i => <Item noused={i.noused} remark={i.remark || ''} updatedAt={i.updatedAt} key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} editApi={this.showApiMoadl} />) : '暂时没有APi'
           }
         </div>
         <Modal visible={visible} onCancel={this.hideModal} maskClosable={false} footer={null} width={1000} >
           <ModalContent {...selectApi} />
         </Modal>
-        <Modal visible={apiModal} footer={null} width={1000} title={isAddApi ? '新增' : '编辑'} maskClosable={false} onCancel={this.hideApiModal} >
+        <Modal visible={apiModal} footer={null} width={1000} title={isAddApi ? '新增' : '编辑'} maskClosable={false} onCancel={this.hideApiModal} destroyOnClose={true} >
 
-          <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} />
+          <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} keyList={keyList} />
         </Modal>
       </div>
     )
@@ -180,6 +186,7 @@ interface ItemProps {
   id: string,
   router: string,
   method: string,
+  noused?: boolean,
   updatedAt?: number,
   isLogin: boolean,
   editApi: (id: string) => void,
@@ -210,7 +217,7 @@ const getColor = (key?: string) => {
   }
 }
 
-const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi, updatedAt, remark }: ItemProps) => {
+const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi, updatedAt, remark, noused }: ItemProps) => {
   const color = getColor(method)
   const getClick = () => {
     onClick(id)
@@ -227,10 +234,11 @@ const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi
 
   const isSelected = false
   return (
-    <div className={styles.item} style={{ background: `${isSelected ? 'rgba(0,0,0,0.3)' : ''}` }} >
+    <div className={styles.item} style={{ background: `${isSelected ? 'rgba(0,0,0,0.3)' : 'initial'}`, textDecoration: `${noused ? 'line-through' : 'initial'}` }} >
       <div style={{ flex: 1, cursor: 'pointer', marginRight: 15 }} onClick={getClick} >
         <Tag color={color} >{method}</Tag>
         <span style={{ fontSize: 18 }} >{router}</span>
+        {noused && <Button type='danger' >当前不使用</Button>}
         <span style={{ float: 'right' }} >
           <span style={{ marginRight: 20 }} >{remark}</span>
           <span>{dayjs(updatedAt).format('YYYY-MM-DD HH:mm:ss')}</span>

@@ -1,7 +1,7 @@
 
 
 import React from 'react'
-import { Form, Button, Input, Select } from 'antd'
+import { Form, Button, Input, Select, Switch } from 'antd'
 import CodeEditor from '@/components/CodeEditor'
 import result from 'lodash/result';
 import Styles from './index.less'
@@ -45,7 +45,8 @@ interface ApiEditorProps {
 class ApiEditorContent extends React.Component<any, any>{
 
   state = {
-
+    keys: Number(new Date()),
+    searchKey: ''
   }
 
   handleSubmit = (e: any) => {
@@ -62,7 +63,7 @@ class ApiEditorContent extends React.Component<any, any>{
   }
 
   getReq = (value: any) => {
-    console.log(value)
+    // console.log(value)
   }
 
   handleVerifyJson = (rule: any, value: string, cb: (any?: any) => any) => {
@@ -88,61 +89,85 @@ class ApiEditorContent extends React.Component<any, any>{
     }
   }
 
+  getSearchKey = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let searchKey = e.target.value
+    this.setState({ searchKey })
+  }
+
   render() {
-    const { data = {} } = this.props
+    const { data = {}, keyList } = this.props
     const { getFieldDecorator } = this.props.form
-    console.log(data)
+    const { searchKey } = this.state
+    let keyArr: string[] = keyList && keyList.length > 0 ? keyList : []
+    let arr = searchKey ? keyArr.filter(i => i.includes(searchKey)) : keyArr
     return (
-      <Form  {...formItemLayout} className={Styles.forms}>
-        <FormItem required={false} label='router'>
-          {getFieldDecorator('router', {
-            rules: [{ required: true, message: '请输入router' }, { validator: this.handleVerifyRouter }],
-            initialValue: result(data, 'router') || '/'
-          })(
-            <Input />
-          )}
-        </FormItem>
-        <FormItem required={false} label='method' >
-          {getFieldDecorator('method', {
-            rules: [{ required: true, message: '请输入method' }],
-            initialValue: result(data, 'method') || methodArr[0]
-          })(
-            <Select>
-              {
-                methodArr.map(i => <Select.Option value={i} key={i} >{i}</Select.Option>)
-              }
-            </Select>
-          )}
-        </FormItem>
-        <FormItem required={false} label='备注'>
-          {getFieldDecorator('remark', {
-            initialValue: result(data, 'remark') || ''
-          })(
-            <Input />
-          )}
-        </FormItem>
-        <FormItem required={false} label='req'>
-          {getFieldDecorator('req', {
-            rules: [{ required: true, message: 'req' }, { validator: this.handleVerifyJson }],
-            initialValue: result(data, 'req') ? JSON.stringify(result(data, 'req'), null, 2) : '{\n  \n}'
-          })(
-            <CodeEditor height={200} width={600} type={'editor'} onChange={this.getReq} key={Number(new Date())} />
-          )}
-        </FormItem>
-        <FormItem required={false} label='res'>
-          {getFieldDecorator('res', {
-            rules: [{ required: true, message: 'res' }, { validator: this.handleVerifyJson }],
-            initialValue: result(data, 'res') ? JSON.stringify(result(data, 'res'), null, 2) : '{\n  "status":1,\n  "message":"错误信息",\n  "payload":{\n  \n  }  \n}'
-          })(
-            <CodeEditor height={380} width={600} type={'editor'} onChange={this.getReq} key={Number(new Date())} />
-          )}
-        </FormItem>
-        <FormItem {...tailFormItemLayout} >
-          <Button type={'primary'} loading={false} onClick={this.handleSubmit} style={{ width: "100%", marginTop: "10px" }}>
-            {'提交'}
-          </Button>
-        </FormItem>
-      </Form>
+      <div>
+        <div style={{ position: 'absolute', width: 200 }} >
+          <Input onChange={this.getSearchKey} style={{ zIndex: 500 }} />
+          {
+            arr && arr.length > 0 && arr.map((i: string) => <div style={{ margin: '5px 0' }} key={i} >{i}</div>)
+          }
+        </div>
+        <Form  {...formItemLayout} className={Styles.forms}>
+          <FormItem required={false} label='router'>
+            {getFieldDecorator('router', {
+              rules: [{ required: true, message: '请输入router' }, { validator: this.handleVerifyRouter }],
+              initialValue: result(data, 'router') || '/'
+            })(
+              <Input />
+            )}
+          </FormItem>
+          <FormItem required={false} label='弃用'>
+            {getFieldDecorator('noused', {
+              initialValue: result(data, 'noused') || false,
+              valuePropName: 'checked'
+            })(
+              <Switch />
+            )}
+          </FormItem>
+          <FormItem required={false} label='method' >
+            {getFieldDecorator('method', {
+              rules: [{ required: true, message: '请输入method' }],
+              initialValue: result(data, 'method') || methodArr[0]
+            })(
+              <Select>
+                {
+                  methodArr.map(i => <Select.Option value={i} key={i} >{i}</Select.Option>)
+                }
+              </Select>
+            )}
+          </FormItem>
+          <FormItem required={false} label='备注'>
+            {getFieldDecorator('remark', {
+              initialValue: result(data, 'remark') || ''
+            })(
+              <Input />
+            )}
+          </FormItem>
+          <FormItem required={false} label='req'>
+            {getFieldDecorator('req', {
+              rules: [{ required: true, message: 'req' }, { validator: this.handleVerifyJson }],
+              initialValue: result(data, 'req') ? JSON.stringify(result(data, 'req'), null, 2) : '{\n  \n}'
+            })(
+              <CodeEditor height={200} width={600} type={'editor'} onChange={this.getReq} key={this.state.keys} />
+            )}
+          </FormItem>
+          <FormItem required={false} label='res'>
+            {getFieldDecorator('res', {
+              rules: [{ required: true, message: 'res' }, { validator: this.handleVerifyJson }],
+              initialValue: result(data, 'res') ? JSON.stringify(result(data, 'res'), null, 2) : '{\n  "status":1,\n  "message":"错误信息",\n  "payload":{\n  \n  }  \n}'
+            })(
+              <CodeEditor height={380} width={600} type={'editor'} onChange={this.getReq} key={this.state.keys} />
+            )}
+          </FormItem>
+          <FormItem {...tailFormItemLayout} >
+            <Button type={'primary'} loading={false} onClick={this.handleSubmit} style={{ width: "100%", marginTop: "10px" }}>
+              {'提交'}
+            </Button>
+          </FormItem>
+        </Form>
+      </div>
+
     )
   }
 }
