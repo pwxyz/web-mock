@@ -4,6 +4,7 @@ import React from 'react'
 import { Form, Button, Input, Select, Switch } from 'antd'
 import CodeEditor from '@/components/CodeEditor'
 import result from 'lodash/result';
+import slice from 'lodash/slice'
 import Styles from './index.less'
 let FormItem = Form.Item
 
@@ -100,6 +101,7 @@ class ApiEditorContent extends React.Component<any, any>{
     const { searchKey } = this.state
     let keyArr: string[] = keyList && keyList.length > 0 ? keyList : []
     let arr = searchKey ? keyArr.filter(i => i.includes(searchKey)) : keyArr
+    arr = slice(arr, 0, 30)
     return (
       <div>
         <div style={{ position: 'absolute', width: 200 }} >
