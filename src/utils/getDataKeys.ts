@@ -45,7 +45,7 @@ const getDataKeys = (arg: DataObjProps[]) => {
       let arr = arg.map(i => ({ ...i.res, ...i.req }))
       arr = arr.map(i => getObjKeys(i))
       let array = Array.from(new Set(flatten(arr)))
-      return array.filter(i => i && !/^\d$/.test(String(i)))
+      return array.filter(i => i && !/^\d+$/.test(String(i)))
     }
   }
   catch (err) {
