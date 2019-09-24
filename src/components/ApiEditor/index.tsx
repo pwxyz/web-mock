@@ -57,10 +57,20 @@ class ApiEditorContent extends React.Component<any, any>{
         let obj: { [x: string]: string } = { ...values }
         obj['res'] = JSON.parse(obj['res'])
         obj['req'] = JSON.parse(obj['req'])
+        obj['tag'] = this.transformTag(obj['tag'])
         // console.log(obj)
         this.props.onChange(obj)
       }
     })
+  }
+
+  transformTag = (str: string): string => {
+    let obj = this.props.tag.find((i: { description: string }) => i.description === str)
+
+    if (obj) {
+      return result(obj, '_id')
+    }
+    return str
   }
 
   getReq = (value: any) => {
