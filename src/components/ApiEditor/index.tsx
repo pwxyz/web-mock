@@ -96,7 +96,7 @@ class ApiEditorContent extends React.Component<any, any>{
   }
 
   render() {
-    const { data = {}, keyList } = this.props
+    const { data = {}, keyList, tag } = this.props
     const { getFieldDecorator } = this.props.form
     const { searchKey } = this.state
     let keyArr: string[] = keyList && keyList.length > 0 ? keyList : []
@@ -104,6 +104,9 @@ class ApiEditorContent extends React.Component<any, any>{
     arr = slice(arr, 0, 30)
     return (
       <div>
+        <Button type={'primary'} loading={false} onClick={this.handleSubmit} style={{ width: "100%", marginTop: "10px" }}>
+          {'提交'}
+        </Button>
         <div style={{ position: 'absolute', width: 200 }} >
           <Input onChange={this.getSearchKey} style={{ zIndex: 500 }} />
           {
@@ -135,6 +138,18 @@ class ApiEditorContent extends React.Component<any, any>{
               <Select>
                 {
                   methodArr.map(i => <Select.Option value={i} key={i} >{i}</Select.Option>)
+                }
+              </Select>
+            )}
+          </FormItem>
+          <FormItem required={false} label='tag' >
+            {getFieldDecorator('tag', {
+              rules: [{ required: true, message: '请输入tag' }],
+              initialValue: result(data, 'tag.description')
+            })(
+              <Select>
+                {
+                  tag.map((i: any) => <Select.Option value={i._id} key={i._id} >{i.description}</Select.Option>)
                 }
               </Select>
             )}

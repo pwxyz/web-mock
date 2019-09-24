@@ -5,7 +5,7 @@ import React from 'react'
 import styles from './id.less'
 import request from '@/utils/request';
 import api from '@/constants/api';
-import { Tag, Modal, Switch, Input, Button, Popconfirm, message, Icon } from 'antd';
+import { Tag, Modal, Switch, Input, Button, Popconfirm, message, Icon, Tabs, Collapse } from 'antd';
 import result from 'lodash/result';
 import dayjs from 'dayjs'
 import { connect } from 'dva';
@@ -13,11 +13,16 @@ import ApiEditor from '@/components/ApiEditor/index';
 import { getBaseUrl } from '@/utils/request'
 import getDataKeys from '@/utils/getDataKeys';
 
+
 interface InitState {
   data: [{
     _id: string,
     router: string,
     method: string,
+    tag: {
+      name: string,
+      description: string
+    },
     updatedAt: number,
     remark?: string,
     noused?: boolean,
@@ -31,6 +36,9 @@ interface InitState {
   },
   visible: boolean,
   isAddApi: boolean,
+  tagList: [],
+  scrollY: number,
+  typeData: any[]
   apiModal: boolean,
   selectApi: {
     [x: string]: any
@@ -64,27 +72,53 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     projectid: '',
     isAddApi: true,
     apiModal: false,
+    tagList: [],
+    typeData: [],
+    scrollY: 0
   }
   componentDidMount() {
-    let id = result(this.props, 'match.params.id', '')
+    let id = this.getProjectId()
     this.setState({ projectid: id })
     this.getApiList(id)
     this.getProjectInfo(id)
+    this.getTag(id)
   }
+
+  getProjectId = () => result(this.props, 'match.params.id', '')
 
   getApiList = async (id: string) => {
 
     let res = await request({ method: 'get', url: api.API, data: { id } })
     if (res && res.data && res.data.length > -1) {
       let keyList = getDataKeys(res.data) || []
-      this.setState({ data: res.data, keyList })
+      let tagList = result(res, 'tagList', [])
+      let typeData = this.getTypeArr(tagList, res.data)
+      this.setState({ data: res.data, keyList, typeData })
     }
+  }
+
+  getTypeArr = (tag: any[], data: any[]) => {
+    let array = tag.map(i => {
+      let obj = { ...i }
+      let arrs = data.filter(item => result(item, 'tag._id') === result(i, '_id'))
+      obj['children'] = arrs
+      return obj
+    })
+    return array
   }
 
   getProjectInfo = async (id: string) => {
     let res = await request({ method: 'get', url: api.PROJECT, data: { id } })
     if (res && res.data && res.data._id) {
       this.setState({ project: res.data })
+    }
+  }
+
+  getTag = async (id: string) => {
+    let res = await request({ method: 'get', url: api.TAG, data: { projectid: id } })
+    let data: [] = result(res, 'data')
+    if (data) {
+      this.setState({ tagList: data })
     }
   }
 
@@ -126,6 +160,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     if (!err) {
       message.success('修改成功')
       this.getApiList(projectid)
+
     }
   }
 
@@ -150,32 +185,52 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   }
 
   render() {
-    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList } = this.state
+    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList, tagList, typeData } = this.state
     const { isLogin = false } = this.props
     let arr = isLogin ? data : data.filter(i => !i.noused)
     const add = () => this.showApiMoadl()
+    // const addTag = () => this.showTagModal()
+    let initTypeId: string = result(typeData, '0._id', '')
     return (
       <div className={styles.container} >
         {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} >
           <Button onClick={add} type='primary' icon='plus' >新增Api</Button>
+          {/* <Button onClick={addTag} type='primary' icon='plus' >新增Tag</Button> */}
         </div>}
         <div  >
           <h2>{project.name}</h2>
           <div><span>对接地址：</span>{project.testUrl}</div>
           <div><span>mock地址：</span>{`${getBaseUrl()}/mock/${projectid}`}</div>
           <div><span>允许导入：</span><Switch checked={project.allowAdd} disabled={true} /></div>
+          {/* <div>{`共有${arr && arr.length}条`}</div> */}
         </div>
         <div>
-          {
-            arr && arr.length ? arr.map(i => <Item noused={i.noused} remark={i.remark || ''} updatedAt={i.updatedAt} key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} editApi={this.showApiMoadl} />) : '暂时没有APi'
-          }
+          <Tabs defaultActiveKey="time" >
+            <Tabs.TabPane tab="按时间排序" key="time">
+              {
+                arr && arr.length ? arr.map(i => <Item tag={i.tag} noused={i.noused} remark={i.remark || ''} updatedAt={i.updatedAt} key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} editApi={this.showApiMoadl} />) : '暂时没有APi'
+              }
+            </Tabs.TabPane>
+            <Tabs.TabPane tab="按类型" key="types">
+              <Collapse defaultActiveKey={[initTypeId]} >
+                {
+                  typeData && typeData.length ? typeData.map(j => <Collapse.Panel key={j['_id']} header={`${j['name']}  ${j['description']}`} >
+                    {
+                      j['children'] && j['children'].length ? j['children'].map((i: any) => <Item tag={i.tag} noused={i.noused} remark={i.remark || ''} updatedAt={i.updatedAt} key={i._id} router={i.router} method={i.method} id={i._id} onClick={this.getApiClick} selectApi={selectApi} delApi={this.delApi} isLogin={isLogin} editApi={this.showApiMoadl} />) : '暂时没有APi'
+                    }
+                  </Collapse.Panel>) : null
+                }
+              </Collapse>
+            </Tabs.TabPane>
+          </Tabs>
+
         </div>
         <Modal visible={visible} onCancel={this.hideModal} maskClosable={false} footer={null} width={1000} >
           <ModalContent {...selectApi} />
         </Modal>
         <Modal visible={apiModal} footer={null} width={1000} title={isAddApi ? '新增' : '编辑'} maskClosable={false} onCancel={this.hideApiModal} destroyOnClose={true} >
 
-          <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} keyList={keyList} />
+          <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} keyList={keyList} tag={tagList} />
         </Modal>
       </div>
     )
@@ -187,6 +242,10 @@ interface ItemProps {
   router: string,
   method: string,
   noused?: boolean,
+  tag?: {
+    name: string,
+    description: string
+  }
   updatedAt?: number,
   isLogin: boolean,
   editApi: (id: string) => void,
@@ -217,7 +276,7 @@ const getColor = (key?: string) => {
   }
 }
 
-const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi, updatedAt, remark, noused }: ItemProps) => {
+const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi, updatedAt, remark, noused, tag }: ItemProps) => {
   const color = getColor(method)
   const getClick = () => {
     onClick(id)
@@ -230,8 +289,6 @@ const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi
     editApi(id)
   }
 
-  // const isSelected = selectApi && selectApi['_id'] && id === selectApi['_id']
-
   const isSelected = false
   return (
     <div className={styles.item} style={{ background: `${isSelected ? 'rgba(0,0,0,0.3)' : 'initial'}`, textDecoration: `${noused ? 'line-through' : 'initial'}` }} >
@@ -240,6 +297,9 @@ const Item = ({ id, router, method, onClick, selectApi, delApi, isLogin, editApi
         <span style={{ fontSize: 18 }} >{router}</span>
         {noused && <Button type='danger' >当前不使用</Button>}
         <span style={{ float: 'right' }} >
+          {
+            tag && tag['description'] ? <Tag color={'blue'} >{tag['description']}</Tag> : null
+          }
           <span style={{ marginRight: 20 }} >{remark}</span>
           <span>{dayjs(updatedAt).format('YYYY-MM-DD HH:mm:ss')}</span>
         </span>
