@@ -19,7 +19,7 @@ interface Arg {
   headers?: object
 }
 
-let url = 'http://172.31.50.85:3357'
+let url = 'http://172.31.50.41:3357'
 // let url = 'http://47.97.194.165:3357'
 
 export const getBaseUrl = () => url
