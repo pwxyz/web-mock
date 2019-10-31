@@ -32,6 +32,7 @@ interface InitState {
   project: {
     name: string,
     testUrl: string,
+    routerPrefix?: string,
     allowAdd: boolean
   },
   visible: boolean,
@@ -202,6 +203,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
           <div><span>对接地址：</span>{project.testUrl}</div>
           <div><span>mock地址：</span>{`${getBaseUrl()}/mock/${projectid}`}</div>
           <div><span>允许导入：</span><Switch checked={project.allowAdd} disabled={true} /></div>
+          <div><span>roterPrefix：</span>{project.routerPrefix}</div>
           {/* <div>{`共有${arr && arr.length}条`}</div> */}
         </div>
         <div>
