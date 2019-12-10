@@ -154,7 +154,7 @@ class ApiEditorContent extends React.Component<any, any>{
           </FormItem>
           <FormItem required={false} label='tag' >
             {getFieldDecorator('tag', {
-              rules: [{ required: true, message: '请输入tag' }],
+              rules: [{ required: false, message: '请输入tag' }],
               initialValue: result(data, 'tag.description')
             })(
               <Select>

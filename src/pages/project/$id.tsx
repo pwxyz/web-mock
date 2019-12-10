@@ -12,7 +12,9 @@ import { connect } from 'dva';
 import ApiEditor from '@/components/ApiEditor/index';
 import { getBaseUrl } from '@/utils/request'
 import getDataKeys from '@/utils/getDataKeys';
-
+import TagEdit from '@/components/TagEdit'
+import TagTable from '@/components/Tag'
+import { Arg } from '@/utils/request'
 
 interface InitState {
   data: [{
@@ -36,6 +38,10 @@ interface InitState {
     allowAdd: boolean
   },
   visible: boolean,
+  tagEditModal: boolean,
+  tagTableModal: boolean,
+  selectTagId?: string[],
+  selectArg: object,
   isAddApi: boolean,
   tagList: [],
   scrollY: number,
@@ -73,6 +79,10 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     projectid: '',
     isAddApi: true,
     apiModal: false,
+    tagEditModal: false,
+    selectTagId: [],
+    selectArg: {},
+    tagTableModal: false,
     tagList: [],
     typeData: [],
     scrollY: 0
@@ -185,18 +195,72 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     this.setState(obj)
   }
 
+  showTagModal = () => {
+    this.setState({ tagEditModal: true, tagTableModal: false, selectTagId: [], selectArg: {} })
+  }
+
+  showEditTagModal = () => {
+    this.setState({ tagEditModal: true, tagTableModal: false })
+  }
+
+  hideTagModal = () => {
+    this.setState({ tagEditModal: false })
+  }
+
+  tagSubmit = async (arg = {}) => {
+    let belongTo = result(this.state, 'projectid', '')
+    let data: { [x: string]: string } = { ...arg, belongTo }
+    let method: Arg['method'] = 'post'
+    if (result(data, 'id')) {
+      method = 'put'
+    }
+    let { err } = await request({ method, url: api.TAG, data })
+    if (!err) {
+      this.getTag(belongTo)
+      message.success(`${method === 'post' ? '新增' : '修改'}成功`)
+    }
+  }
+
+  delTag = async () => {
+    let id = this.state.selectTagId
+    if (id && id.length) {
+      let { err } = await request({ method: 'delete', url: api.TAG, data: { id } })
+      if (!err) {
+        this.getTag(this.state.projectid)
+        message.success('删除成功')
+      }
+    }
+
+  }
+
+  showTagTable = () => {
+    this.setState({ tagTableModal: true })
+  }
+
+  closeTagTable = () => {
+    this.setState({ tagTableModal: false })
+  }
+
+  onSelectChange = (arr: string[], selectArg: object) => {
+    this.setState({ selectTagId: arr, selectArg })
+  }
+
+  backTagTable = () => {
+    this.setState({ tagTableModal: true, tagEditModal: false })
+  }
+
   render() {
-    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList, tagList, typeData } = this.state
+    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList, tagList, typeData, tagEditModal, tagTableModal, selectTagId, selectArg } = this.state
     const { isLogin = false } = this.props
     let arr = isLogin ? data : data.filter(i => !i.noused)
     const add = () => this.showApiMoadl()
-    // const addTag = () => this.showTagModal()
     let initTypeId: string = result(typeData, '0._id', '')
     return (
       <div className={styles.container} >
         {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} >
+          <Button onClick={this.showTagTable} style={{ display: 'block', marginBottom: 20 }} >Tag</Button>
           <Button onClick={add} type='primary' icon='plus' >新增Api</Button>
-          {/* <Button onClick={addTag} type='primary' icon='plus' >新增Tag</Button> */}
+
         </div>}
         <div  >
           <h2>{project.name}</h2>
@@ -233,6 +297,20 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
         <Modal visible={apiModal} footer={null} width={1000} title={isAddApi ? '新增' : '编辑'} maskClosable={false} onCancel={this.hideApiModal} destroyOnClose={true} >
 
           <ApiEditor onChange={isAddApi ? this.addApi : this.editApi} data={selectApi} keyList={keyList} tag={tagList} />
+        </Modal>
+        <Modal visible={tagTableModal} footer={null} width={1000} title={'Tag列表'} maskClosable={false} onCancel={this.closeTagTable} destroyOnClose={true}>
+          <div style={{ width: 240, marginBottom: 20, display: 'flex', justifyContent: 'space-between' }} >
+            <Button type="primary" onClick={this.showTagModal} >新增</Button>
+            <Button onClick={this.showEditTagModal} disabled={selectTagId && selectTagId.length !== 1} >编辑</Button>
+            <Popconfirm title="确定删除选中的tag?" onConfirm={this.delTag} >
+              <Button type="danger" disabled={selectTagId && selectTagId.length === 0} >删除</Button>
+            </Popconfirm>
+
+          </div>
+          <TagTable data={tagList} onSelectChange={this.onSelectChange} />
+        </Modal>
+        <Modal visible={tagEditModal} footer={null} width={1000} title={selectTagId && selectTagId.length ? '编辑' : '新增'} maskClosable={false} onCancel={this.hideTagModal} destroyOnClose={true}>
+          <TagEdit onSubmit={this.tagSubmit} data={selectArg} tagId={result(selectTagId, '0')} reback={this.backTagTable} />
         </Modal>
       </div>
     )

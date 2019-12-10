@@ -12,15 +12,15 @@ enum methodArr {
   'put'
 }
 
-interface Arg {
+export interface Arg {
   method: 'get' | 'post' | 'delete' | 'put',
   url: string,
   data?: object,
   headers?: object
 }
 
-let url = 'http://172.31.50.41:3357'
-// let url = 'http://47.97.194.165:3357'
+// let url = 'http://172.31.50.41:3357'
+let url = 'http://172.31.50.29:3357'
 
 export const getBaseUrl = () => url
 
