@@ -128,6 +128,7 @@ const Project = ({ name, createdAt, id, onClick, delProject, showEditProject }: 
       <div onClick={getClick} style={{ cursor: 'pointer' }} >
         <div>{name}</div>
         <div>{dayjs(createdAt).format('YYYY-MM-DD HH:mm:ss')}</div>
+        <div><span style={{ marginRight: 5 }} >项目ID: </span>{id}</div>
       </div>
       <div className={styles.btncontent} >
         <Popconfirm title='确定删除该项目?' onConfirm={_ => delProject(id)} >
