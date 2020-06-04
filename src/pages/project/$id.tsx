@@ -15,7 +15,7 @@ import getDataKeys from '@/utils/getDataKeys';
 import TagEdit from '@/components/TagEdit'
 import TagTable from '@/components/Tag'
 import { Arg } from '@/utils/request'
-
+import downloadUrl from '@/utils/download'
 interface InitState {
   data: [{
     _id: string,
@@ -241,6 +241,14 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     this.setState({ tagTableModal: false })
   }
 
+  download = async () => {
+    let res = await request({ method: 'post', url: api.DOWNLOAD + `/${result(this.state, 'projectid', '')}` })
+    console.log(res)
+    if (!result(res, 'err')) {
+      downloadUrl(result(res, 'url'))
+    }
+  }
+
   onSelectChange = (arr: string[], selectArg: object) => {
     this.setState({ selectTagId: arr, selectArg })
   }
@@ -257,9 +265,11 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     let initTypeId: string = result(typeData, '0._id', '')
     return (
       <div className={styles.container} >
-        {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} >
+        {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} ><Button onClick={add} type='primary' icon='plus' style={{ display: 'block', marginBottom: 20 }}>新增Api</Button>
           <Button onClick={this.showTagTable} style={{ display: 'block', marginBottom: 20 }} >Tag</Button>
-          <Button onClick={add} type='primary' icon='plus' >新增Api</Button>
+          <Button onClick={this.download} type='primary' icon='download' style={{ display: 'block', marginBottom: 20 }}  >导出docx</Button>
+
+
 
         </div>}
         <div  >
