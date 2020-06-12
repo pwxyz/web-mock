@@ -242,11 +242,12 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   }
 
   download = async () => {
-    let res = await request({ method: 'post', url: api.DOWNLOAD + `/${result(this.state, 'projectid', '')}` })
-    console.log(res)
-    if (!result(res, 'err')) {
-      downloadUrl(result(res, 'url'))
-    }
+    // let res = await request({ method: 'post', url: api.DOWNLOAD + `/${result(this.state, 'projectid', '')}` })
+    // console.log(res)
+    // if (!result(res, 'err')) {
+    //   downloadUrl(result(res, 'url'))
+    // }
+    downloadUrl('http://172.31.50.41:3357' + api.DOWNLOAD + `/${result(this.state, 'projectid', '')}`)
   }
 
   onSelectChange = (arr: string[], selectArg: object) => {
