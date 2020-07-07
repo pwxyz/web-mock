@@ -54,10 +54,11 @@ class ApiEditorContent extends React.Component<any, any>{
     e.preventDefault();
     this.props.form.validateFieldsAndScroll((err: undefined | string, values: object) => {
       if (!err) {
-        let obj: { [x: string]: string } = { ...values }
-        obj['res'] = JSON.parse(obj['res'])
+        let obj: { [x: string]: any } = { ...values }
+        obj['res'] = JSON.parse(obj['res'] as string)
         obj['req'] = JSON.parse(obj['req'])
         obj['tag'] = this.transformTag(obj['tag'])
+        obj['sleep'] = Number(obj['sleep'])
         // console.log(obj)
         this.props.onChange(obj)
       }
@@ -138,6 +139,14 @@ class ApiEditorContent extends React.Component<any, any>{
               valuePropName: 'checked'
             })(
               <Switch />
+            )}
+          </FormItem>
+          <FormItem required={false} label='延迟时间'>
+            {getFieldDecorator('sleep', {
+              initialValue: result(data, 'sleep') || 0,
+              rules: [{ pattern: /^\d{1,2}$/, message: '请输入数字,' }]
+            })(
+              <Input />
             )}
           </FormItem>
           <FormItem required={false} label='method' >
