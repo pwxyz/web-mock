@@ -19,8 +19,8 @@ export interface Arg {
   headers?: object
 }
 
-let url = 'http://172.31.50.41:3357'
-// let url = 'http://172.31.50.29:3357'
+// let url = 'http://172.31.50.41:3357'
+let url = 'http://172.31.50.29:3357'
 
 export const getBaseUrl = () => url
 

@@ -8,7 +8,7 @@ import slice from 'lodash/slice'
 import Styles from './index.less'
 let FormItem = Form.Item
 
-const methodArr = ['GET', 'POST', 'DELETE', 'PUT']
+const methodArr = ['GET', 'POST', 'DELETE', 'PUT', 'PATCH']
 
 
 const formItemLayout = {

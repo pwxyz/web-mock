@@ -6,7 +6,8 @@ const api = {
   PROJECT: '/project',
   TAG: '/tag',
   DOWNLOAD: '/download',
-  API: '/api'
+  API: '/api',
+  VERSION: '/version'
 }
 
 

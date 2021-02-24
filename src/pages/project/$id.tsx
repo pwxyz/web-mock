@@ -5,8 +5,9 @@ import React from 'react'
 import styles from './id.less'
 import request from '@/utils/request';
 import api from '@/constants/api';
-import { Tag, Modal, Switch, Input, Button, Popconfirm, message, Icon, Tabs, Collapse } from 'antd';
+import { Tag, Modal, Switch, Input, Button, Popconfirm, message, Icon, Tabs, Collapse, Select, Spin } from 'antd';
 import result from 'lodash/result';
+import get from 'lodash/get';
 import dayjs from 'dayjs'
 import { connect } from 'dva';
 import ApiEditor from '@/components/ApiEditor/index';
@@ -16,6 +17,7 @@ import TagEdit from '@/components/TagEdit'
 import TagTable from '@/components/Tag'
 import { Arg } from '@/utils/request'
 import downloadUrl from '@/utils/download'
+import Version from '@/components/Version'
 interface InitState {
   data: [{
     _id: string,
@@ -49,7 +51,11 @@ interface InitState {
   apiModal: boolean,
   selectApi: {
     [x: string]: any
-  }
+  },
+  versionArr: any[],
+  currentVersion: string | null;
+  versionModal: boolean;
+  apiLoading: boolean
 }
 const mapStateToProps = (state: { [x: string]: any }) => {
   return {
@@ -85,27 +91,86 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     tagTableModal: false,
     tagList: [],
     typeData: [],
-    scrollY: 0
+    scrollY: 0,
+    versionArr: [],
+    currentVersion: '',
+    versionModal: false,
+    apiLoading: false,
   }
   componentDidMount() {
     let id = this.getProjectId()
     this.setState({ projectid: id })
-    this.getApiList(id)
+
     this.getProjectInfo(id)
     this.getTag(id)
+    this.getVersion(id)
+    let currentVersion = this.getCurrentVersion()
+    this.setState({ currentVersion })
+    this.getApiList(id, currentVersion)
+  }
+
+  changeVerion = (value: any) => {
+    this.setState({ currentVersion: value })
+    let id = this.getProjectId()
+    let v = value === undefined ? null : value
+    this.getApiList(id, v)
+    this.setCurrentVersion(v)
+  }
+
+  getCurrentVersion = () => {
+    let str: any = localStorage.getItem('currentVersion')
+    let obj = JSON.parse(str)
+    return get(obj, this.getProjectId(), null)
+  }
+  setCurrentVersion = (str: string) => {
+    let strs: any = localStorage.getItem('currentVersion')
+    let obj = JSON.parse(strs)
+    if (typeof obj === 'object') {
+      obj = { ...obj, [this.getProjectId()]: str }
+    }
+    obj = { [this.getProjectId()]: str }
+    return localStorage.setItem('currentVersion', JSON.stringify(obj))
   }
 
   getProjectId = () => result(this.props, 'match.params.id', '')
 
-  getApiList = async (id: string) => {
+  showVersion = () => this.setState({ versionModal: true })
 
-    let res = await request({ method: 'get', url: api.API, data: { id } })
+  postVersion = async (obj: { [x: string]: any }) => {
+    let id = this.getProjectId()
+    let value = get(obj, 'name')
+    let data: { [x: string]: any } = { name: value, belongTo: id }
+    let parent = this.getCurrentVersion()
+    if (parent) {
+      data['parent'] = parent
+    }
+    let res = await request({ url: api.VERSION, method: 'post', data })
+
+    if (!get(res, 'err')) {
+      let currentVersion = get(res, 'version._id')
+      this.setState({ versionModal: false })
+      this.getApiList(id, currentVersion)
+      this.getVersion(id).then(() => {
+        this.setCurrentVersion(currentVersion)
+        this.setState({ currentVersion })
+      })
+    }
+  }
+
+
+
+  getApiList = async (id: string, v?: any) => {
+    let version = v === null ? null : v ? v : this.state.currentVersion
+    this.setState({ apiLoading: true })
+    let res = await request({ method: 'get', url: api.API, data: { id, version } })
     if (res && res.data && res.data.length > -1) {
       let keyList = getDataKeys(res.data) || []
       let tagList = result(res, 'tagList', [])
       let typeData = this.getTypeArr(tagList, res.data)
       this.setState({ data: res.data, keyList, typeData })
     }
+    this.setState({ apiLoading: false })
+
   }
 
   getTypeArr = (tag: any[], data: any[]) => {
@@ -122,6 +187,13 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     let res = await request({ method: 'get', url: api.PROJECT, data: { id } })
     if (res && res.data && res.data._id) {
       this.setState({ project: res.data })
+    }
+  }
+
+  getVersion = async (id: string) => {
+    let res = await request({ method: 'get', url: api.VERSION, data: { id } })
+    if (res && res.data) {
+      this.setState({ versionArr: res.data })
     }
   }
 
@@ -147,8 +219,8 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   }
 
   delApi = async (id: string) => {
-    let { err } = await request({ method: 'delete', url: api.API + '/' + id })
-    if (!err) {
+    let res = await request({ method: 'delete', url: api.API + '/' + id })
+    if (!get(res, 'err')) {
       message.success('删除成功')
       let projectid = this.state.projectid
       this.getApiList(projectid)
@@ -157,8 +229,13 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
 
   addApi = async (obj: object) => {
     let projectid = this.state.projectid
-    let { err } = await request({ method: 'post', url: api.API, data: { ...obj, belongTo: projectid } })
-    if (!err) {
+    let data: any = { ...obj, belongTo: projectid }
+    let version = this.state.currentVersion
+    if (version) {
+      data['version'] = version
+    }
+    let res = await request({ method: 'post', url: api.API, data })
+    if (!get(res, 'err')) {
       message.success('新增成功')
       this.getApiList(projectid)
     }
@@ -167,8 +244,8 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   editApi = async (obj: object) => {
     let apiId = this.state.selectApi._id
     let projectid = this.state.projectid
-    let { err } = await request({ method: 'put', url: api.API + '/' + apiId, data: obj })
-    if (!err) {
+    let res = await request({ method: 'put', url: api.API + '/' + apiId, data: obj })
+    if (!get(res, 'err')) {
       message.success('修改成功')
       this.getApiList(projectid)
 
@@ -214,8 +291,8 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     if (result(data, 'id')) {
       method = 'put'
     }
-    let { err } = await request({ method, url: api.TAG, data })
-    if (!err) {
+    let res = await request({ method, url: api.TAG, data })
+    if (!get(res, 'err')) {
       this.getTag(belongTo)
       message.success(`${method === 'post' ? '新增' : '修改'}成功`)
     }
@@ -224,8 +301,8 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   delTag = async () => {
     let id = this.state.selectTagId
     if (id && id.length) {
-      let { err } = await request({ method: 'delete', url: api.TAG, data: { id } })
-      if (!err) {
+      let res = await request({ method: 'delete', url: api.TAG, data: { id } })
+      if (!get(res, 'err')) {
         this.getTag(this.state.projectid)
         message.success('删除成功')
       }
@@ -259,7 +336,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
   }
 
   render() {
-    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList, tagList, typeData, tagEditModal, tagTableModal, selectTagId, selectArg } = this.state
+    const { data, project, visible, selectApi, projectid, isAddApi, apiModal, keyList, tagList, typeData, tagEditModal, tagTableModal, selectTagId, selectArg, versionArr, currentVersion } = this.state
     const { isLogin = false } = this.props
     let arr = isLogin ? data : data.filter(i => !i.noused)
     const add = () => this.showApiMoadl()
@@ -267,6 +344,7 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
     return (
       <div className={styles.container} >
         {isLogin && <div style={{ position: 'fixed', right: 70, top: 70 }} ><Button onClick={add} type='primary' icon='plus' style={{ display: 'block', marginBottom: 20 }}>新增Api</Button>
+          <Button onClick={this.showVersion} type='primary' icon='plus' style={{ display: 'block', marginBottom: 20 }}>新增版本</Button>
           <Button onClick={this.showTagTable} style={{ display: 'block', marginBottom: 20 }} >Tag</Button>
           <Button onClick={this.download} type='primary' icon='download' style={{ display: 'block', marginBottom: 20 }}  >导出docx</Button>
 
@@ -274,14 +352,22 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
 
         </div>}
         <div  >
-          <h2>{project.name}</h2>
+          <div style={{ display: 'flex' }} >
+            <h2>{project.name}  </h2>
+            <Select value={currentVersion} allowClear={true} onChange={this.changeVerion} style={{ minWidth: 200, marginLeft: 40 }} >
+              {
+                versionArr.map(i => <Select.Option key={get(i, '_id')} value={get(i, '_id')} >{get(i, 'name')}</Select.Option>)
+              }
+            </Select>
+          </div>
+
           <div><span>对接地址：</span>{project.testUrl}</div>
-          <div><span>mock地址：</span>{`${getBaseUrl()}/mock/${projectid}`}</div>
+          <div><span>mock地址：</span>{`${getBaseUrl()}/mock/${projectid}${currentVersion ? '/' + get(versionArr.find(i => get(i, '_id') === currentVersion), 'name', '') : ''}`}</div>
           <div><span>允许导入：</span><Switch checked={project.allowAdd} disabled={true} /></div>
           <div><span>roterPrefix：</span>{project.routerPrefix}</div>
           {/* <div>{`共有${arr && arr.length}条`}</div> */}
         </div>
-        <div>
+        <Spin spinning={this.state.apiLoading} >
           <Tabs defaultActiveKey="time" >
             <Tabs.TabPane tab="按时间排序" key="time">
               {
@@ -301,7 +387,10 @@ class ProjectIdCompoent extends React.Component<any, InitState>{
             </Tabs.TabPane>
           </Tabs>
 
-        </div>
+        </Spin>
+        <Modal title='增加版本' visible={this.state.versionModal} footer={null} destroyOnClose={true}  >
+          <Version onSubmit={this.postVersion} reback={() => this.setState({ versionModal: false })} />
+        </Modal>
         <Modal visible={visible} onCancel={this.hideModal} maskClosable={false} footer={null} width={1000} >
           <ModalContent {...selectApi} />
         </Modal>
